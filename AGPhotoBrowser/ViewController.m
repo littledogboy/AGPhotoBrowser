@@ -11,31 +11,38 @@
 
 @interface ViewController ()
 
+@property (nonatomic,retain) UIImageView *smallImageView;
+@property (nonatomic,retain) UIImageView *photoImageView;
+@property (nonatomic,retain) UIView *backView;
+
 @end
 
 @implementation ViewController
+- (void)dealloc
+{
+    [_smallImageView release];
+    [_photoImageView release];
+    [_backView release];
+    [super dealloc];
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    UIImageView *smallImageView = [[UIImageView alloc] initWithFrame:(CGRectMake(50, 50,220,124.5))];
+    _smallImageView = [[UIImageView alloc] initWithFrame:(CGRectMake(50, 50,220,124.5))];
     // 1. clipsToBounds 超出边界剪裁 yes
-    smallImageView.clipsToBounds = YES;
+    _smallImageView.clipsToBounds = YES;
     // 2. contentMode 等比缩放 超出剪裁  两个都设置了才会剪裁
-    smallImageView.contentMode = UIViewContentModeScaleAspectFill;
+    _smallImageView.contentMode = UIViewContentModeScaleAspectFill;
     NSURL *url = [NSURL URLWithString:@"http://ww3.sinaimg.cn/bmiddle/8e88b0c1gw1e9lpr0nly5j20pf0gygo6.jpg"];
     // 1.使用方法1 url给imageView给图像
-    [smallImageView sd_setImageWithURL:url];
-    smallImageView.userInteractionEnabled  = YES; // 打开用户交互
+    [_smallImageView sd_setImageWithURL:url];
+    _smallImageView.userInteractionEnabled  = YES; // 打开用户交互
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapImage)];
-    [smallImageView addGestureRecognizer:tapGesture];
+    [_smallImageView addGestureRecognizer:tapGesture];
     
     
-    [self.view addSubview:smallImageView];
-    [smallImageView release];
-    
-    
-    
+    [self.view addSubview:_smallImageView];
     
     // Do any additional setup after loading the view.
 }
@@ -43,27 +50,53 @@
 - (void)tapImage
 {
     [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:(UIStatusBarAnimationFade)];
-    UIView *backView = [[UIView alloc] init];
-    backView.frame = [UIScreen mainScreen].bounds;
-    backView.backgroundColor = [UIColor blackColor];
+    _backView = [[UIView alloc] init];
+    _backView.frame = [UIScreen mainScreen].bounds;
+    _backView.backgroundColor = [UIColor blackColor];
     // 自动调整子视图 保证与左 上  顶 下距离不变
-    backView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _backView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     //
-    UIImageView *photoImageView  = [[UIImageView alloc] initWithFrame:self.view.frame];
-    NSURL *url = [NSURL URLWithString:@"http://ww3.sinaimg.cn/bmiddle/8e88b0c1gw1e9lpr0nly5j20pf0gygo6.jpg"];
-    [photoImageView sd_setImageWithURL:url];
-    photoImageView.backgroundColor = [UIColor clearColor];
-    photoImageView.clipsToBounds = YES;
-    photoImageView.contentMode = UIViewContentModeScaleAspectFit;
-    photoImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-    [backView addSubview:photoImageView];
-    [photoImageView release];
+//    UIImageView *photoImageView  = [[UIImageView alloc] initWithFrame:self.view.frame];
+    
+//    UIImageView *photoImageView = _smallImageView;
+//    NSURL *url = [NSURL URLWithString:@"http://ww3.sinaimg.cn/bmiddle/8e88b0c1gw1e9lpr0nly5j20pf0gygo6.jpg"];
+    
+    _photoImageView = [[UIImageView alloc] initWithFrame:self.smallImageView.frame];
+    _photoImageView.image = _smallImageView.image;
+    UITapGestureRecognizer *tapTwo = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapTwo)];
+    _photoImageView.userInteractionEnabled = YES;
+    [_photoImageView addGestureRecognizer:tapTwo];
+    [tapTwo release];
+    [UIView animateWithDuration:0.2 animations:^{
+        _photoImageView.frame = self.view.frame;
+    } completion:^(BOOL finished) {
+    }];
+    
+//    [photoImageView sd_setImageWithURL:url];
+    _photoImageView.backgroundColor = [UIColor clearColor];
+    _photoImageView.clipsToBounds = YES;
+    _photoImageView.contentMode = UIViewContentModeScaleAspectFit;
+    _photoImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [_backView addSubview:_photoImageView];
+    
+    // keyWindow的理解
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
-    [window addSubview:backView];
-    [backView release];
+    [window addSubview:_backView];
     
     NSLog(@"图片放大");
+}
+
+- (void)tapTwo
+{
+    NSLog(@"第二次点击缩小");
+//    CGRect smallImageFrame = self.smallImageView.frame;
+//    CGRect photoImageFrame = self.photoImageView.frame;
+    [UIView animateWithDuration:0.2 animations:^{
+        self.photoImageView.frame = self.smallImageView.frame;
+    } completion:^(BOOL finished) {
+        [self.backView removeFromSuperview];
+    }];
+    
 }
 
 - (void)didReceiveMemoryWarning {
