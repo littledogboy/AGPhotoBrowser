@@ -63,10 +63,20 @@
     
     _photoImageView = [[UIImageView alloc] initWithFrame:self.smallImageView.frame];
     _photoImageView.image = _smallImageView.image;
+#pragma mark- 给大图添加点击手势
     UITapGestureRecognizer *tapTwo = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapTwo)];
+    tapTwo.numberOfTapsRequired = 1;
+    tapTwo.numberOfTouchesRequired = 1;
+    
+    UILongPressGestureRecognizer *longPressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPress:)];
+    longPressGesture.numberOfTouchesRequired = 1;
+      longPressGesture.minimumPressDuration = 0.5;
     _photoImageView.userInteractionEnabled = YES;
     [_photoImageView addGestureRecognizer:tapTwo];
+    [_photoImageView addGestureRecognizer:longPressGesture];
     [tapTwo release];
+    [longPressGesture release];
+    
     [UIView animateWithDuration:0.2 animations:^{
         _photoImageView.frame = self.view.frame;
     } completion:^(BOOL finished) {
@@ -79,7 +89,8 @@
     _photoImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [_backView addSubview:_photoImageView];
     
-    // keyWindow的理解
+    // keyWindow的  _backView 被加到了 ViewController的 View上面
+    // 如果想让旋转控制控制不一样 ，只有写两个 controller了
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:_backView];
     
@@ -99,11 +110,72 @@
     
 }
 
+#pragma mark- 长按触发保存图片到手机相册事件
+- (void)longPress:(UILongPressGestureRecognizer *)longPG
+{
+    // 如果不加 state判断会触发多次，因为longPress手势不是单次执行手势
+    if (longPG.state == UIGestureRecognizerStateBegan) {
+        NSLog(@"longPress被触发");
+        [self saveImagetoPhotos:self.photoImageView.image];
+    }
+}
+
+- (void)saveImagetoPhotos:(UIImage *)saveImage
+{
+    NSLog(@"将要保存图片");
+    UIImageWriteToSavedPhotosAlbum(saveImage, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
+}
+
+- (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo
+{
+    NSString *msg = nil;
+    if (error != nil) {
+        msg = @"图片保存失败";
+    }
+    else
+    {
+        msg = @"图片保存成功";
+    }
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"保存结果提示" message:msg delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+    [alertView show];
+}
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
+
+#pragma mark 屏幕旋转控制
+/**
+ 想要实现的效果，底层原始小图不可以旋转，点击放大后的大图可以旋转
+ 只有自动旋转设置为yes   supportedInterfaceOrientations 才会有效
+ 
+ 三个函数来完成控制旋转。当shouldAutorotate返回YES的时候，第二个函数才会有效。如果返回NO，
+ 则无论你的项目如何设置，你的ViewController都只会使用
+ preferredInterfaceOrientationForPresentation
+ 的返回值来初始化自己的方向，
+ 
+ 如果你没有重新定义preferredInterfaceOrientationForPresentation这个函数，那么它就返回父视图控制器的
+ preferredInterfaceOrientationForPresentation的值。
+ 
+ 默认 就是yes
+ */
+- (BOOL)shouldAutorotate
+{
+    return YES;
+}
+
+// 支持的方向
+- (NSUInteger)supportedInterfaceOrientations
+{
+    return UIInterfaceOrientationMaskAll;
+}
+
+- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation
+{
+    return UIInterfaceOrientationPortrait;
+}
 /*
 #pragma mark - Navigation
 
